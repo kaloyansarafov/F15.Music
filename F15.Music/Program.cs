@@ -51,26 +51,26 @@ namespace Buzzard_V2
         public async Task MainAsync()
         {
             // call ConfigureServices to create the ServiceCollection/Provider for passing around the services
-            await using (var services = ConfigureServices())
-            {
+            var services = ConfigureServices();
+
                 // get the client and assign to client 
                 // you get the services via GetRequiredService<T>
-                var client = services.GetRequiredService<DiscordSocketClient>();
-                _client = client;
+            var client = services.GetRequiredService<DiscordSocketClient>();
+            _client = client;
 
-                // setup logging and the ready event
-                services.GetRequiredService<LoggingService>();
+            // setup logging and the ready event
+            services.GetRequiredService<LoggingService>();
 
 
-                // this is where we get the Token value from the configuration file, and start the bot
-                await client.LoginAsync(TokenType.Bot, _config["Token"]);
-                await client.StartAsync();
+            // this is where we get the Token value from the configuration file, and start the bot
+            await client.LoginAsync(TokenType.Bot, _config["Token"]);
+            await client.StartAsync();
 
-                // we get the CommandHandler class here and call the InitializeAsync method to start things up for the CommandHandler service
-                await services.GetRequiredService<CommandHandler>().InitializeAsync(client);
+            // we get the CommandHandler class here and call the InitializeAsync method to start things up for the CommandHandler service
+            await services.GetRequiredService<CommandHandler>().InitializeAsync(client);
 
-                await Task.Delay(-1);
-            }
+            await Task.Delay(-1);
+
         }
 
         private Task LogAsync(LogMessage log)
