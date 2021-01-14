@@ -45,7 +45,7 @@ namespace F15.Services
 
         public async Task InitializeAsync(DiscordSocketClient client)
         {
-            //client.UserLeft += OnUserLeft;
+            client.UserLeft += OnUserLeft;
             
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
         }

@@ -19,6 +19,7 @@ namespace F15.Services
         private readonly DiscordSocketClient _discord;
         private readonly CommandService _commands;
         private readonly LavaNode _instanceOfLavaNode;
+        private LavaLinkAudio _audioService;
 
         public LoggingService(IServiceProvider services)
         {
@@ -27,11 +28,13 @@ namespace F15.Services
             _commands = services.GetRequiredService<CommandService>();
             _logger = services.GetRequiredService<ILogger<LoggingService>>();
             _instanceOfLavaNode = services.GetRequiredService<LavaNode>();
+            _audioService = services.GetRequiredService<LavaLinkAudio>();
 
             // hook into these events with the methods provided below
             _discord.Ready += OnReadyAsync;
             _discord.Log += OnLogAsync;
             _commands.Log += OnLogAsync;
+            _instanceOfLavaNode.OnTrackEnded += _audioService.TrackEnded;
         }
 
         // this method executes on the bot being connected/ready

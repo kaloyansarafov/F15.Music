@@ -51,7 +51,7 @@ namespace Buzzard_V2
         public async Task MainAsync()
         {
             // call ConfigureServices to create the ServiceCollection/Provider for passing around the services
-            using (var services = ConfigureServices())
+            await using (var services = ConfigureServices())
             {
                 // get the client and assign to client 
                 // you get the services via GetRequiredService<T>
@@ -60,6 +60,7 @@ namespace Buzzard_V2
 
                 // setup logging and the ready event
                 services.GetRequiredService<LoggingService>();
+
 
                 // this is where we get the Token value from the configuration file, and start the bot
                 await client.LoginAsync(TokenType.Bot, _config["Token"]);
@@ -91,6 +92,7 @@ namespace Buzzard_V2
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandler>()
                 .AddSingleton<LoggingService>()
+                .AddSingleton<LavaLinkAudio>()
                 .AddDbContext<XPContext>()
                 .AddLogging(configure => configure.AddSerilog())
                 .AddLavaNode(x =>
