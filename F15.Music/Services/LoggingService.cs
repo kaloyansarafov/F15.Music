@@ -14,7 +14,6 @@ namespace F15.Services
     public class LoggingService
     {
 
-        // declare the fields used later in this class
         private readonly ILogger _logger;
         private readonly DiscordSocketClient _discord;
         private readonly CommandService _commands;
@@ -23,21 +22,18 @@ namespace F15.Services
 
         public LoggingService(IServiceProvider services)
         {
-            // get the services we need via DI, and assign the fields declared above to them
             _discord = services.GetRequiredService<DiscordSocketClient>();
             _commands = services.GetRequiredService<CommandService>();
             _logger = services.GetRequiredService<ILogger<LoggingService>>();
             _instanceOfLavaNode = services.GetRequiredService<LavaNode>();
             _audioService = services.GetRequiredService<LavaLinkAudio>();
 
-            // hook into these events with the methods provided below
             _discord.Ready += OnReadyAsync;
             _discord.Log += OnLogAsync;
             _commands.Log += OnLogAsync;
             _instanceOfLavaNode.OnTrackEnded += _audioService.TrackEnded;
         }
 
-        // this method executes on the bot being connected/ready
         public Task OnReadyAsync()
         {
             if (!_instanceOfLavaNode.IsConnected)
@@ -50,7 +46,6 @@ namespace F15.Services
             return Task.CompletedTask;
         }
 
-        // this method switches out the severity level from Discord.Net's API, and logs appropriately
         public Task OnLogAsync(LogMessage msg)
         {
             string logText = $"{msg.Source}: {msg.Exception?.ToString() ?? msg.Message}";

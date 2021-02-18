@@ -42,18 +42,13 @@ namespace F15.Services
             }
         }
 
-        /*This is ran when a user uses either the command Join or Play
-            I decided to put these two commands as one, will probably change it in future. 
-            Task Returns an Embed which is used in the command call.. */
         public async Task<Embed> PlayAsync(SocketGuildUser user, IGuild guild, string query)
         {
-            //Check If User Is Connected To Voice Cahnnel.
             if (user.VoiceChannel == null)
             {
                 return await EmbedHandler.CreateErrorEmbed("Music, Join/Play", "You Must First Join a Voice Channel.");
             }
 
-            //Check the guild has a player available.
             if (!_lavaNode.HasPlayer(guild))
             {
                 return await EmbedHandler.CreateErrorEmbed("Music, Play", "I'm not connected to a voice channel.");
@@ -61,27 +56,21 @@ namespace F15.Services
 
             try
             {
-                //Get the player for that guild.
                 var player = _lavaNode.GetPlayer(guild);
 
-                //Find The Youtube Track the User requested.
                 LavaTrack track;
 
                 var search = Uri.IsWellFormedUriString(query, UriKind.Absolute) ?
                     await _lavaNode.SearchAsync(query)
                     : await _lavaNode.SearchYouTubeAsync(query);
 
-                //If we couldn't find anything, tell the user.
                 if (search.LoadStatus == LoadStatus.NoMatches)
                 {
                     return await EmbedHandler.CreateErrorEmbed("Music", $"I wasn't able to find anything for {query}.");
                 }
 
-                //Get the first track from the search results.
-                //TODO: Add a 1-5 list for the user to pick from. (Like Fredboat)
                 track = search.Tracks.FirstOrDefault();
 
-                //If the Bot is already playing music, or if it is paused but still has music in the playlist, Add the requested track to the queue.
                 if (player.Track != null && player.PlayerState is PlayerState.Playing || player.PlayerState is PlayerState.Paused)
                 {
                     player.Queue.Enqueue(track);
@@ -89,13 +78,11 @@ namespace F15.Services
                     return await EmbedHandler.CreateBasicEmbed("Music", $"{track.Title} has been added to queue.", Color.Blue);
                 }
 
-                //Player was not playing anything, so lets play the requested track.
                 await player.PlayAsync(track);
                 Log.Information("Music", $"Bot Now Playing: {track.Title}\nUrl: {track.Url}");
                 return await EmbedHandler.CreateBasicEmbed("Music", $"Now Playing: {track.Title}\nUrl: {track.Url}", Color.Blue);
             }
 
-            //If after all the checks we did, something still goes wrong. Tell the user about it so they can report it back to us.
             catch (Exception ex)
             {
                 return await EmbedHandler.CreateErrorEmbed("Music, Play", ex.Message);
@@ -103,61 +90,46 @@ namespace F15.Services
 
         }
 
-        /*This is ran when a user uses the command Leave.
-            Task Returns an Embed which is used in the command call. */
         public async Task<Embed> LeaveAsync(IGuild guild)
         {
             try
             {
-                //Get The Player Via GuildID.
                 var player = _lavaNode.GetPlayer(guild);
 
-                //if The Player is playing, Stop it.
                 if (player.PlayerState is PlayerState.Playing)
                 {
                     await player.StopAsync();
                 }
 
-                //Leave the voice channel.
                 await _lavaNode.LeaveAsync(player.VoiceChannel);
 
                 Log.Information("Music", $"Bot has left.");
                 return await EmbedHandler.CreateBasicEmbed("Music", $"I've left. Thank you for playing moosik.", Color.Blue);
             }
-            //Tell the user about the error so they can report it back to us.
             catch (InvalidOperationException ex)
             {
                 return await EmbedHandler.CreateErrorEmbed("Music, Leave", ex.Message);
             }
         }
 
-        /*This is ran when a user uses the command List 
-            Task Returns an Embed which is used in the command call. */
         public async Task<Embed> ListAsync(IGuild guild)
         {
             try
             {
-                /* Create a string builder we can use to format how we want our list to be displayed. */
                 var descriptionBuilder = new StringBuilder();
 
-                /* Get The Player and make sure it isn't null. */
                 var player = _lavaNode.GetPlayer(guild);
                 if (player == null)
                     return await EmbedHandler.CreateErrorEmbed("Music, List", $"Could not aquire player.\nAre you using the bot right now? check /Help for info on how to use the bot.");
 
                 if (player.PlayerState is PlayerState.Playing)
                 {
-                    /*If the queue count is less than 1 and the current track IS NOT null then we wont have a list to reply with.
-                        In this situation we simply return an embed that displays the current track instead. */
                     if (player.Queue.Count < 1 && player.Track != null)
                     {
                         return await EmbedHandler.CreateBasicEmbed($"Now Playing: {player.Track.Title}", "Nothing Else Is Queued.", Color.Blue);
                     }
                     else
                     {
-                        /* Now we know if we have something in the queue worth replying with, so we itterate through all the Tracks in the queue.
-                         *  Next Add the Track title and the url however make use of Discords Markdown feature to display everything neatly.
-                            This trackNum variable is used to display the number in which the song is in place. (Start at 2 because we're including the current song.*/
                         var trackNum = 2;
                         foreach (LavaTrack track in player.Queue)
                         {
@@ -179,18 +151,13 @@ namespace F15.Services
 
         }
 
-        /*This is ran when a user uses the command Skip 
-            Task Returns an Embed which is used in the command call. */
         public async Task<Embed> SkipTrackAsync(IGuild guild)
         {
             try
             {
                 var player = _lavaNode.GetPlayer(guild);
-                /* Check if the player exists */
                 if (player == null)
                     return await EmbedHandler.CreateErrorEmbed("Music, List", $"Could not aquire player.\nAre you using the bot right now? check /Help for info on how to use the bot.");
-                /* Check The queue, if it is less than one (meaning we only have the current song available to skip) it wont allow the user to skip.
-                     User is expected to use the Stop command if they're only wanting to skip the current song. */
                 if (player.Queue.Count < 1)
                 {
                     return await EmbedHandler.CreateErrorEmbed("Music, SkipTrack", $"Unable To skip a track as there is only One or No songs currently playing." +
@@ -200,9 +167,7 @@ namespace F15.Services
                 {
                     try
                     {
-                        /* Save the current song for use after we skip it. */
                         var currentTrack = player.Track;
-                        /* Skip the current song. */
                         await player.SkipAsync();
                         Log.Information("Music", $"Bot skipped: {currentTrack.Title}");
                         return await EmbedHandler.CreateBasicEmbed("Music Skip", $"I have successfully skiped {currentTrack.Title}", Color.Blue);
@@ -220,8 +185,6 @@ namespace F15.Services
             }
         }
 
-        /*This is ran when a user uses the command Stop 
-            Task Returns an Embed which is used in the command call. */
         public async Task<Embed> StopAsync(IGuild guild)
         {
             try
@@ -231,8 +194,6 @@ namespace F15.Services
                 if (player == null)
                     return await EmbedHandler.CreateErrorEmbed("Music, List", $"Could not aquire player.\nAre you using the bot right now? check /Help for info on how to use the bot.");
 
-                /* Check if the player exists, if it does, check if it is playing.
-                     If it is playing, we can stop.*/
                 if (player.PlayerState is PlayerState.Playing)
                 {
                     await player.StopAsync();
@@ -247,8 +208,6 @@ namespace F15.Services
             }
         }
 
-        /*This is ran when a user uses the command Volume 
-            Task Returns a String which is used in the command call. */
         public async Task<string> SetVolumeAsync(IGuild guild, int volume)
         {
             if (volume > 150 || volume <= 0)

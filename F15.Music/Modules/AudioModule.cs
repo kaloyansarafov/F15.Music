@@ -13,12 +13,8 @@ namespace F15.Music.Modules
     {
         public class AudioModule : ModuleBase<SocketCommandContext>
         {
-            /* Get our AudioService from DI */
             public LavaLinkAudio AudioService { get; set; }
 
-            /* All the below commands are ran via Lambda Expressions to keep this file as neat and closed off as possible. 
-                  We pass the AudioService Task into the section that would normally require an Embed as that's what all the
-                  AudioService Tasks are returning. */
 
             [Command("Join")]
             public async Task JoinAndPlay()
@@ -29,6 +25,7 @@ namespace F15.Music.Modules
                 => await ReplyAsync(embed: await AudioService.LeaveAsync(Context.Guild));
 
             [Command("Play")]
+            [Alias("P")]
             public async Task Play([Remainder] string search)
                 => await ReplyAsync(embed: await AudioService.PlayAsync(Context.User as SocketGuildUser, Context.Guild, search));
 
@@ -37,10 +34,12 @@ namespace F15.Music.Modules
                 => await ReplyAsync(embed: await AudioService.StopAsync(Context.Guild));
 
             [Command("List")]
+            [Alias("Q","Queue")]
             public async Task List()
                 => await ReplyAsync(embed: await AudioService.ListAsync(Context.Guild));
 
             [Command("Skip")]
+            [Alias("S")]
             public async Task Skip()
                 => await ReplyAsync(embed: await AudioService.SkipTrackAsync(Context.Guild));
 

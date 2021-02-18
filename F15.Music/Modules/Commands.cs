@@ -11,8 +11,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
+
 namespace Buzzard_V2
 {
     public class Commands : ModuleBase
@@ -179,6 +182,168 @@ namespace Buzzard_V2
             int addedmsgs = usermsgs + Convert.ToInt32(truexp);
             await ReplyAsync($"{user.Mention} has been rewarded {xp} XP by: `{Context.User}`");
             await LevelUpAsync(usermsgs, addedmsgs, user, gld, channel); //pass the premessages, addedmessages, the socketmessage and the guild
+        }
+
+        [Command("cat"), Summary("Grabs a random cat image.")]  //This is like the gimme cats command, but it only sends one cat image and not to the user's DM but to the command channel
+        public async Task ACat(string input = "")
+        {
+            if (input == "" || input != "")
+            {
+                HttpResponseMessage response = await new HttpClient().GetAsync("http://thecatapi.com/api/images/get?format=xml&results_per_page=20");   //if it fails to get the xml, then we return  
+                
+                if (!response.IsSuccessStatusCode) { await ReplyAsync("Failed to get response from server, please try again"); return; };                  //Checks if there was a response
+
+                string xml = await response.Content.ReadAsStringAsync();    //read the xml as a string
+                XDocument xdoc = XDocument.Parse(xml);      //parse xml                                              
+                var elems = xdoc.Elements("response").Elements("data").Elements("images").Elements("image");
+
+                if (elems == null) return;                  //if its null, then we return
+
+                List<string> urls = new List<string>();     //new list to store the urls
+                urls.AddRange(elems.Select(x => x.Element("url")?.Value));  //add the image urls to the list
+                int max = urls.Count - 1;                //set the max page and reduce by 1 cause array starts from 0       
+
+                await ReplyAsync("", false, new EmbedBuilder
+                {  //Send message and create embed
+                    Title = "Cat Image",                        //Title for embed
+                    Color = new Color(0, 170, 230),             //Color for embed
+                    ImageUrl = urls.First(),                    //Cat image URL 
+                }.Build());
+            }
+        }
+        [Command("fire")]   //Fire command, another fun command
+        public async Task Fire([Remainder] string user = null)
+        {
+            if (Context.Channel.Id == 326078054948667393) { return; }
+            if (user == null) { await ReplyAsync("Who do you want me to shoort at?"); }
+            else if (user == "<@366986823274201089>")
+            {
+                var LazerReplies = new string[] { "Why do you make me do this?", "Ahhh fine!", "This is how your treat the bots ayyy? ", "Really M9 making me fire at myself", "<@366986823274201089> committed suicide" };
+                string reply = LazerReplies[new Random().Next(0, LazerReplies.Length)];
+                await ReplyAsync(reply);
+            }
+            else if (user == "@here" || user == "@everyone") { await ReplyAsync($"Shots were fired at {Context.User.Mention}!"); }
+            else { await ReplyAsync($"Shots were fired at {user}"); }
+        }
+        [Command("smile")] //Smile command that literally is another random output :D                                        
+        public async Task Smile([Remainder] string input = "")
+        {
+            if (input == "" || input != "")
+            {
+                if (Context.Channel.Id == 326078054948667393) { return; }
+                var replies = new string[] { "Sure ", "Okay! ", "Fine ", "Ok ", "here you go " };   //the different replies the bot can send
+                string reply = replies[new Random().Next(0, replies.Length)];                       //chooses randomly through the array
+                await ReplyAsync(reply + ":smiley:");                                               //most random command ever
+            }
+        }
+
+        [Command("help")]
+        public async Task Help([Remainder] string input = "")
+        {
+            if (Context.Channel.Id == 326078054948667393) { return; }   //Checks if the channel si badsport
+            input = input.ToLower();
+            EmbedBuilder embed = new EmbedBuilder();
+            SocketRole owner = Context.Guild.Roles.FirstOrDefault(x => x.Id == 257984497071554560) as SocketRole;
+            SocketRole mods = Context.Guild.Roles.FirstOrDefault(x => x.Id == 311889967679012864) as SocketRole;
+            SocketGuildUser Author = Context.User as SocketGuildUser;
+
+            embed.WithColor(new Color(0, 170, 230));
+            embed.Title = "__**Main Commands**__";
+            embed.Description = File.ReadAllText($"OverallList.txt");
+            embed.ThumbnailUrl = "https://i0.wp.com/pcpilotscrew.com/wp-content/uploads/2018/03/pcpi2_ytlogo512.png?resize=120%2C120&ssl=1";
+            embed.WithFooter("Type /help followed by a bots name for detailed commands related to them");
+            await ReplyAsync("", false, embed.Build());
+
+        }
+        [Command("rules")]  //Rules command displays the rules for a specified topic. The topic is passed as an input parameter by the suer as the variable "rules"
+        public async Task Rules()
+        {
+            await ReplyAsync("https://pcpilotscrew.com/rules-and-guidelines");
+        }
+
+        [Command("links")]
+        public async Task Links([Remainder] string input = "")
+        {
+            if (Context.Channel.Id == 326078054948667393) { return; }
+            var embed = new EmbedBuilder();
+            embed.WithColor(new Color(0, 170, 230));
+            embed.ThumbnailUrl = "https://i0.wp.com/pcpilotscrew.com/wp-content/uploads/2018/03/pcpi2_ytlogo512.png?resize=120%2C120&ssl=1";
+            embed.Title = "__**Social Links**__";
+            embed.Description = "[PC Pilots Website](https://pcpilotscrew.com/)\n\n[YouTube](https://www.youtube.com/channel/UCd8NZO_JkFms2pvyxxe1Flg)\n\n[Twitch](https://www.twitch.tv/pcpilotscrew)\n\n[Discord](https://discord.gg/mu3cvWA)\n\n[Instagram](https://www.instagram.com/pcpilotscrew/)\n\n[Social Club Crew](https://socialclub.rockstargames.com/crew/pc_pilots_crew/wall)\n\n[Ace Combat Group](https://steamcommunity.com/groups/pcpilotsac)\n\n[Twitter](https://twitter.com/pcpilotscrew)\n\n[Patreon](https://www.patreon.com/pcpilots)";
+            await ReplyAsync("", false, embed.Build());
+        }
+
+        [Command("8ball")]
+        public async Task Ball([Remainder] string Question = "")    //Very simple comand really just sends a random output, ok next command
+        {
+            if (Question != "")
+            {
+                List<string> Replies = new List<string> { "Yes", "Maybe :thinking:", "Nah M8", "Gucci", "Who knows", "Possibly", "IDK FEK OFF!", "Hell yes", "Definitely" };
+                await ReplyAsync(Replies[new Random().Next(0, Replies.Count)]);
+            }
+            else { await ReplyAsync("What is your question?"); }
+        }
+        [Command("Flipcoin")]   //Flipa  coin command. Simple random number generator which determines an output. Which is either heads or tails
+        public async Task FlipCoin([Remainder] string input)
+        {
+            int Chance = new Random().Next(2);  //declares random number
+            EmbedBuilder Embed = new EmbedBuilder();    //Makes custom embed
+            Embed.Color = new Color(0, 170, 230);
+            if (Chance == 0)
+            {
+                Embed.Title = "Heads";
+                Embed.ImageUrl = "https://researchmaniacs.com/Random/Images/Quarter-Heads.png";
+            }
+            else if (Chance == 1)
+            {
+                Embed.Title = "Tails";
+                Embed.ImageUrl = "https://wi-images.condecdn.net/image/kMw9dD3kMqD/crop/900/f/pound-coin.png";
+            }
+            await ReplyAsync("", false, Embed.Build());       //Sends embed   
+        }
+        [Command("avatar")] //Gets a specified user's avatar, because why not
+        public async Task Avatar(SocketGuildUser user = null)
+        {
+            if (user != null)   //Checks if the user is null
+            {
+                await ReplyAsync("", false, new EmbedBuilder
+                {  //Declares custom emebed then sends it
+                    Title = user.Nickname,
+                    Color = new Color(0, 170, 230),
+                    ImageUrl = user.GetAvatarUrl(),
+                }.Build());
+            }
+            else { await ReplyAsync("Please specify a user. Syntax /avatar user"); }    //Output message if the user is null
+        }
+        [Command("gimmecats")]  //Gimme cats command, sends a specified number of random cat images of GIFs to a user's DM
+        public async Task GimmeCats(int Cats = 0)
+        {
+            if (Context.Channel.Id == 326078054948667393) { return; }
+            if (Cats == 0) { await ReplyAsync("How many cats do you want?"); return; }  //Checks if the user entered the number of cats they want
+            if (Cats <= 10) //Checks if the number of cats is less than 10.
+            {
+                await ReplyAsync($"{Context.User.Mention} cats in your DM");    //Sends message to command channel to inform the user to check their DM
+                EmbedBuilder embed = new EmbedBuilder();    //Creates custom embed               
+                var response = await new HttpClient().GetAsync("http://thecatapi.com/api/images/get?format=xml&results_per_page=20");
+                //if it fails to get the xml, then we return
+                if (!response.IsSuccessStatusCode) return;
+                string xml = await response.Content.ReadAsStringAsync();
+                var xdoc = XDocument.Parse(xml); //parse xml                                              
+                var elems = xdoc.Elements("response").Elements("data").Elements("images").Elements("image");
+                if (elems == null) return; //if its null, then we return
+                List<string> urls = new List<string>(); //new list to store the urls
+                urls.AddRange(elems.Select(x => x.Element("url")?.Value)); //add the image urls to the list
+                int max = urls.Count - 1; //set the max page and reduce the value by 1 since and array starts at 0               
+                for (int i = 0; i < Cats; i++)
+                {
+                    embed.WithTitle($"Cat Image"); //set title               
+                    embed.WithColor(new Color(0, 170, 230)); //set color
+                    embed.WithCurrentTimestamp(); //timestamp              
+                    embed.WithImageUrl(urls[i]); //set the first image
+                    await UserExtensions.SendMessageAsync(Context.User, "", false, embed.Build());
+                }
+            }
+            else { await ReplyAsync("Number of cats must be less than 10"); }
         }
 
         public async Task LevelUpAsync(int PreMsgs, int addedmsgs, SocketGuildUser user, SocketGuild gld, SocketTextChannel channel)
@@ -612,30 +777,6 @@ namespace Buzzard_V2
             if (!(Context.User.Id == 348505747828506624)) { await ReplyAsync("Sorry man, small thing called permissions!"); return; }
             Console.Clear();        //clears the console           
             await ReplyAsync("<@348505747828506624> the console has been cleared");   //mwessage output saying the console has been cleared        
-        }
-        [Command("debug")]
-        public async Task BotInfo(string input = "")
-        {
-            if (Context.Message.Author.Id == 348505747828506624)
-            {
-                if (input == "") { await Debug(); }
-                else if (input == "f15") { await Debug(); }
-                else { return; }
-            }
-        }
-
-        [Command("Migrate")]
-        public async Task Migrate()
-        {
-            using (var cont = new XPContext())
-            {
-                foreach (var file in Directory.EnumerateFiles("Bot-Data", "*.txt"))
-                {
-                    cont.Xp.Add(new Xp()
-                    { DiscordId = file.Replace(".txt", "").Replace("Bot-Data\\", ""), XpAmount = int.TryParse(File.ReadAllText(file), out var i) ? i : 0 });
-                }
-                await cont.SaveChangesAsync();
-            }
         }
 
         [Command("rank")]
@@ -1251,57 +1392,7 @@ namespace Buzzard_V2
             }
             return rank;
         }
-        public int FindPlaceInLeaderBoard(SocketGuild gld, SocketGuildUser UserToFind)
-        {
-            SocketRole YouTubeTeam = gld.Roles.FirstOrDefault(x => x.Id == 301351461424594957) as SocketRole;   //YouTube Team
-            SocketRole staff = gld.Roles.FirstOrDefault(x => x.Id == 257984752236101643) as SocketRole;      //Staff
-            SocketRole Leader = gld.Roles.FirstOrDefault(x => x.Id == 301350078151393283) as SocketRole; //Leader
-            SocketRole Owner = gld.Roles.FirstOrDefault(x => x.Id == 257984497071554560) as SocketRole;  //owner
-            SocketRole Member = gld.Roles.FirstOrDefault(x => x.Id == 339703419537457175) as SocketRole;  //member
-            SocketRole Recruits = gld.Roles.FirstOrDefault(x => x.Id == 428508411244707841) as SocketRole;
-            List<IList> Leaderboard = new List<IList> { };      //Declare new empty list
-            foreach (var user in gld.Users)
-            {
-                if (user.Roles.Contains(Member) || user.Roles.Contains(staff) || user.Roles.Contains(Recruits) || user.Roles.Contains(YouTubeTeam) || user.Roles.Contains(Owner) || user.Roles.Contains(Leader))
-                {
-                    if (File.Exists(user.Id + ".txt"))
-                    {
-                        List<string> UserArray = new List<string> { };
-                        string username = $"<@{user.Id}>";
-                        string msgString = File.ReadAllText(user.Id + ".txt");
-                        int.TryParse(msgString, out int usermsgs);
-                        int xp = usermsgs * 12;
-                        string XP = xp.ToString();
-                        UserArray.Add(username);
-                        UserArray.Add(XP);
-                        Leaderboard.Add(UserArray);
-                    }
-                }
-            }
-            int k, j;
-            int N = Leaderboard.Count;
-            for (j = N - 1; j > 0; j--)
-            {
-                for (k = 0; k < j; k++)
-                {
-                    if (Convert.ToInt32(Leaderboard[k][1]) > Convert.ToInt32(Leaderboard[k + 1][1]))
-                    {
-                        IList Temp = Leaderboard[k];
-                        Leaderboard[k] = Leaderboard[k + 1];
-                        Leaderboard[k + 1] = Temp;
-                    }
-                }
-            }
-            Leaderboard.Reverse();
-            for (int i = 0; i < Leaderboard.Count; i++)
-            {
-                if (Leaderboard[i][0].ToString() == $"<@{UserToFind.Id}>")
-                {
-                    return i + 1;
-                }
-            }
-            return -1;
-        }
+        
         public async Task Debug()
         {
             using (Process process = Process.GetCurrentProcess())
