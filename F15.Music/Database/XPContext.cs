@@ -15,7 +15,7 @@ namespace F15.Database
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseMySQL("server=baloegwoaygpxdwfnluc-mysql.services.clever-cloud.com;database=baloegwoaygpxdwfnluc;user=uiqlndsekur9x4ng;password=YyDhKh6qnhQIZrwaK4DN");
+            optionsBuilder.UseMySQL("Enter MySQL Server pass here");
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
